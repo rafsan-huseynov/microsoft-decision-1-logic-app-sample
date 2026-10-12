@@ -61,7 +61,7 @@ while IFS='=' read -r key value; do
 done < .env
 
 # Optional: other identifiers to look for (your name, other resource names), as a regex in .env.
-extra=$(grep -E '^SCAN_EXTRA_PATTERNS=' .env | cut -d= -f2-)
+extra=$(grep -E '^SCAN_EXTRA_PATTERNS=' .env | cut -d= -f2- | sed -E "s/^['\"](.*)['\"]$/\1/")
 if [[ -n "$extra" ]]; then
   echo
   echo "SCAN_EXTRA_PATTERNS from .env:"

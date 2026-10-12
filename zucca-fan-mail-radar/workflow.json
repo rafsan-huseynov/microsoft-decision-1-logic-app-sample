@@ -12,10 +12,10 @@
           "schema": {
             "type": "object",
             "properties": {
-              "customerEmail": { "type": "string" },
+              "senderEmail": { "type": "string" },
               "message": { "type": "string", "minLength": 1 }
             },
-            "required": ["customerEmail", "message"]
+            "required": ["senderEmail", "message"]
           }
         }
       }
@@ -52,20 +52,20 @@
               },
               "happiness": {
                 "type": "score",
-                "instructions": "How happy is the customer with Zucca Cat Treats?",
+                "instructions": "How happy is the sender with Zucca Cat Treats?",
                 "criteria": ["Neutral", "Happy", "Superfan"]
               },
               "shareable_story": {
                 "type": "noul",
-                "instructions": "Does the message include a fun or heartwarming story about their cat that would be nice to share with other customers?"
+                "instructions": "Does the message include a fun or heartwarming story about their cat that would be nice to share with other fans?"
               },
               "share_permission": {
                 "type": "noul",
-                "instructions": "Does the customer clearly say we are allowed to share their message or story?"
+                "instructions": "Does the sender clearly say we are allowed to share their message or story?"
               },
               "flavor_request": {
                 "type": "choice",
-                "instructions": "Is the customer asking for a new flavor?",
+                "instructions": "Is the sender asking for a new flavor?",
                 "criteria": {
                   "duck": "Asks for a duck flavor",
                   "turkey": "Asks for a turkey flavor",

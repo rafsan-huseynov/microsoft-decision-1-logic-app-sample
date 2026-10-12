@@ -31,8 +31,8 @@ rows=()
 failures=0
 count=$(jq length "$MESSAGES_FILE")
 for ((i = 0; i < count; i++)); do
-  payload=$(jq -c ".[$i] | {customerEmail, message}" "$MESSAGES_FILE")
-  email=$(jq -r ".[$i].customerEmail" "$MESSAGES_FILE")
+  payload=$(jq -c ".[$i] | {senderEmail, message}" "$MESSAGES_FILE")
+  email=$(jq -r ".[$i].senderEmail" "$MESSAGES_FILE")
   expected=$(jq -r ".[$i].expectedNextAction // empty" "$MESSAGES_FILE")
   response=$(curl -sS --max-time 120 -X POST -H "Content-Type: application/json" \
     -d "$payload" -w '\n%{http_code}' --config - <<<"url = \"$callback_url\"")
@@ -59,15 +59,15 @@ for ((i = 0; i < count; i++)); do
 done
 
 {
-  printf 'CUSTOMER\tPRODUCT\tHAPPINESS\tSHAREABLE\tPERMISSION\tFLAVOR\tNEXT ACTION\tRESULT\n'
+  printf 'SENDER\tPRODUCT\tHAPPINESS\tSHAREABLE\tPERMISSION\tFLAVOR\tNEXT ACTION\tRESULT\n'
   printf '%s\n' "${rows[@]}"
 } | column -t -s $'\t'
 
 # Input validation: the trigger must reject these with 400 before any model call.
 echo
 invalid_cases=(
-  'empty message|{"customerEmail":"empty.test@example.com","message":""}'
-  'missing message|{"customerEmail":"missing.test@example.com"}'
+  'empty message|{"senderEmail":"empty.test@example.com","message":""}'
+  'missing message|{"senderEmail":"missing.test@example.com"}'
 )
 validation_rows=()
 for case in "${invalid_cases[@]}"; do
