@@ -1,0 +1,158 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "operationOptions": "EnableSchemaValidation",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "customerEmail": { "type": "string" },
+              "message": { "type": "string", "minLength": 1 }
+            },
+            "required": ["customerEmail", "message"]
+          }
+        }
+      }
+    },
+    "actions": {
+      "Classify_with_Decision1": {
+        "type": "Http",
+        "runAfter": {},
+        "inputs": {
+          "method": "POST",
+          "uri": "@{appsetting('FOUNDRY_ENDPOINT')}/providers/microsoft/v1/systemone",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "authentication": {
+            "type": "ManagedServiceIdentity",
+            "audience": "https://cognitiveservices.azure.com"
+          },
+          "body": {
+            "model": "@{appsetting('DECISION_DEPLOYMENT_NAME')}",
+            "state": "@triggerBody()?['message']",
+            "questions": {
+              "product": {
+                "type": "choice",
+                "instructions": "Which Zucca Cat Treats product is this message about?",
+                "criteria": {
+                  "salmon_crunch": "Salmon Crunch treats",
+                  "tuna_bites": "Tuna Bites treats",
+                  "chicken_puffs": "Chicken Puffs treats",
+                  "catnip_cookies": "Catnip Cookies",
+                  "other": "Another product or no specific product"
+                }
+              },
+              "happiness": {
+                "type": "score",
+                "instructions": "How happy is the customer with Zucca Cat Treats?",
+                "criteria": ["Neutral", "Happy", "Superfan"]
+              },
+              "shareable_story": {
+                "type": "noul",
+                "instructions": "Does the message include a fun or heartwarming story about their cat that would be nice to share with other customers?"
+              },
+              "share_permission": {
+                "type": "noul",
+                "instructions": "Does the customer clearly say we are allowed to share their message or story?"
+              },
+              "flavor_request": {
+                "type": "choice",
+                "instructions": "Is the customer asking for a new flavor?",
+                "criteria": {
+                  "duck": "Asks for a duck flavor",
+                  "turkey": "Asks for a turkey flavor",
+                  "shrimp": "Asks for a shrimp flavor",
+                  "other": "Asks for some other new flavor",
+                  "none": "No new flavor request"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Decision_Summary": {
+        "type": "Compose",
+        "runAfter": {
+          "Classify_with_Decision1": ["Succeeded"]
+        },
+        "inputs": {
+          "product": "@body('Classify_with_Decision1')?['answers']?['product']?['choice']",
+          "happiness": "@{if(less(body('Classify_with_Decision1')?['answers']?['happiness']?['score'], 0.5), 'Neutral', if(less(body('Classify_with_Decision1')?['answers']?['happiness']?['score'], 1.5), 'Happy', 'Superfan'))} (@{formatNumber(body('Classify_with_Decision1')?['answers']?['happiness']?['score'], '0.00')})",
+          "shareable_story": "@{if(greater(body('Classify_with_Decision1')?['answers']?['shareable_story']?['noul'], 0.7), 'Yes', 'No')} (@{formatNumber(mul(body('Classify_with_Decision1')?['answers']?['shareable_story']?['noul'], 100), '0')}%)",
+          "share_permission": "@{if(greater(body('Classify_with_Decision1')?['answers']?['share_permission']?['noul'], 0.8), 'Yes', 'No')} (@{formatNumber(mul(body('Classify_with_Decision1')?['answers']?['share_permission']?['noul'], 100), '0')}%)",
+          "flavor_request": "@body('Classify_with_Decision1')?['answers']?['flavor_request']?['choice']",
+          "next_action": "@if(and(greaterOrEquals(body('Classify_with_Decision1')?['answers']?['happiness']?['score'], 1.5), greater(body('Classify_with_Decision1')?['answers']?['shareable_story']?['noul'], 0.7), greater(body('Classify_with_Decision1')?['answers']?['share_permission']?['noul'], 0.8)), 'Send to Marketing as testimonial', if(not(equals(body('Classify_with_Decision1')?['answers']?['flavor_request']?['choice'], 'none')), 'Add vote to Flavor Wishlist', 'Send thank-you reply'))"
+        }
+      },
+      "Is_Testimonial": {
+        "type": "If",
+        "runAfter": {
+          "Decision_Summary": ["Succeeded"]
+        },
+        "expression": {
+          "and": [
+            {
+              "equals": [
+                "@outputs('Decision_Summary')?['next_action']",
+                "Send to Marketing as testimonial"
+              ]
+            }
+          ]
+        },
+        "actions": {
+          "Route_to_Marketing": {
+            "type": "Compose",
+            "runAfter": {},
+            "inputs": "Placeholder: send this testimonial to Marketing for review."
+          }
+        },
+        "else": {
+          "actions": {
+            "No_Testimonial": {
+              "type": "Compose",
+              "runAfter": {},
+              "inputs": "Placeholder: not a testimonial. Next action: @{outputs('Decision_Summary')?['next_action']}"
+            }
+          }
+        }
+      },
+      "Response": {
+        "type": "Response",
+        "kind": "Http",
+        "runAfter": {
+          "Is_Testimonial": ["Succeeded"]
+        },
+        "inputs": {
+          "statusCode": 200,
+          "headers": { "Content-Type": "application/json" },
+          "body": "@outputs('Decision_Summary')"
+        }
+      },
+      "Response_On_Failure": {
+        "type": "Response",
+        "kind": "Http",
+        "runAfter": {
+          "Is_Testimonial": ["Failed", "Skipped", "TimedOut"]
+        },
+        "inputs": {
+          "statusCode": 502,
+          "headers": { "Content-Type": "application/json" },
+          "body": {
+            "error": "Decision model call failed",
+            "decisionStatusCode": "@outputs('Classify_with_Decision1')?['statusCode']"
+          }
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

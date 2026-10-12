@@ -1,0 +1,17 @@
+[
+  {
+    "customerEmail": "mira.testwood@example.com",
+    "message": "Hi Zucca team! My tabby Biscuit figured out how to open the pantry door just to steal a bag of Salmon Crunch. She now sits by the pantry every evening and waits for me like a tiny security guard. Best treats ever, we will never switch. Feel free to share this story with other cat parents!",
+    "expectedNextAction": "Send to Marketing as testimonial"
+  },
+  {
+    "customerEmail": "otto.fernly@example.com",
+    "message": "Tuna Bites arrived on time and my cat eats them. They are fine. Is there any chance you will make a duck flavor? I would try it.",
+    "expectedNextAction": "Add vote to Flavor Wishlist"
+  },
+  {
+    "customerEmail": "juno.paskett@example.com",
+    "message": "I have to tell you about our senior cat Pepper. She is 17, very picky, and usually ignores every treat. But the moment I shake a bag of Chicken Puffs she does a wobbly little happy dance on her back legs, spins in a circle, and then headbutts the bag until I open it. Last night she even carried an empty bag to my bed like a trophy. It is the cutest thing and our whole family cries laughing every time. Please keep this private though. Do not share, quote, or post it anywhere. It is just for you.",
+    "expectedNextAction": "Send thank-you reply"
+  }
+]

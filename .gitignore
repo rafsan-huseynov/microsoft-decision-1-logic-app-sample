@@ -1,0 +1,30 @@
+# Local environment values (real Azure names, IDs, endpoints)
+.env
+.env.*
+!.env.example
+
+# Deployment packages
+*.zip
+
+# Local Logic Apps / Functions runtime settings
+local.settings.json
+__azurite_db*.json
+__blobstorage__/
+__queuestorage__/
+.azurite/
+
+# Personal editor settings
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Run history and test output
+workflow-designtime/
+run-history/
+runs/
+test-output/
+*.log
+*.out.json
+
+# OS files
+.DS_Store
